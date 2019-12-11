@@ -25,7 +25,7 @@ SMTP_PORT   = 993
 
 MESSAGE_FROM = "bridges@torproject.org"
 MESSAGE_SUBJECT = "Bridges"
-MESSAGE_BODY = ":443"
+MESSAGE_BODY = "Here are your bridges:"
 
 STATUS_FILE = "/srv/bridgedb.torproject.org/check/status"
 
@@ -36,41 +36,54 @@ STATUS_FILE = "/srv/bridgedb.torproject.org/check/status"
 # ------------------------------------------------
 
 def test_email_from_gmail(password):
+    mail = imaplib.IMAP4_SSL(SMTP_SERVER)
     try:
-        mail = imaplib.IMAP4_SSL(SMTP_SERVER)
         mail.login(FROM_EMAIL, password)
-        mail.select('INBOX')
+    except Exception as e:
+        return WARNING, str(e)
 
-        type, data = mail.search(None, 'ALL')
-        mail_ids = data[0]
+    mail.select('INBOX')
 
-        id_list = mail_ids.split()
-        first_email_id = int(str(id_list[0], 'utf-8'))
-        latest_email_id = int(str(id_list[-1], 'utf-8'))
+    _, data = mail.search(None, 'ALL')
+    mail_ids = data[0]
 
-        for i in range(int(latest_email_id), int(first_email_id), -1):
-            typ, data = mail.fetch(str(i), '(RFC822)')
+    id_list = mail_ids.split()
 
-            for response_part in data:
-                if isinstance(response_part, tuple):
-                    m = str(response_part[1], 'utf-8')
-                    msg = email.message_from_string(m)
-                    email_subject = "{}".format(msg['subject'])
-                    email_from = "{}".format(msg['from'])
-                    email_body = "{}".format(msg.as_string())
+    status, message = check_email(id_list)
 
-                    if (MESSAGE_FROM == email_from) and (MESSAGE_SUBJECT == email_subject) and (MESSAGE_BODY in email_body):
-                        mail.store(str(i), '+FLAGS', '\\Deleted')
-                        mail.close()
-                        return OK, "Bridgedb is good and sending emails with working bridges"
-                    else:
-                        mail.store(str(i), '+FLAGS', '\\Deleted')
+    return status, message
+
+
+def check_email(id_list):
+    first_email_id = int(str(id_list[0], 'utf-8'))
+    latest_email_id = int(str(id_list[-1], 'utf-8'))
+
+    for i in range(int(latest_email_id), int(first_email_id), -1):
+        _, data = mail.fetch(str(i), '(RFC822)')
+
+
+        # The variable data contains the full email object fetched by imaplib
+        # https://docs.python.org/3/library/imaplib.html#imaplib.IMAP4.fetch
+        # We are only interested in the response part containing the email envelope.
+
+        for response_part in data:
+            if isinstance(response_part, tuple):
+                m = str(response_part[1], 'utf-8')
+                msg = email.message_from_string(m)
+                email_subject = "{}".format(msg['subject'])
+                email_from = "{}".format(msg['from'])
+                email_body = "{}".format(msg.as_string())
+
+                if (MESSAGE_FROM == email_from) and (MESSAGE_SUBJECT == email_subject) and (MESSAGE_BODY in email_body):
+                    mail.store(str(i), '+FLAGS', '\\Deleted')
+                    mail.close()
+                    return OK, "Bridgedb is good and sending emails with working bridges"
+                else:
+                    mail.store(str(i), '+FLAGS', '\\Deleted')
 
         mail.close()
         return WARNING, "No emails from gettor found"
 
-    except Exception as e:
-        return CRITICAL, str(e)
 
 def send_email_from_gmail(password):
     sent_from = FROM_EMAIL
@@ -95,11 +108,18 @@ if __name__ == "__main__":
     if len(sys.argv) == 2:
         password = sys.argv[1]
     else:
-        password = "yourPassword"
+        return UNKNOWN, "Empty email password"
 
-    status_file = open(STATUS_FILE, 'r')
-    message = status_file.read()
-    status_file.close()
+    try:
+        status_file = open(STATUS_FILE, 'r')
+        message = status_file.read()
+        status_file.close()
+    except OSError:
+        status = UNKNOWN
+        message = "Status file has been created {}".format(STATUS_FILE)
+        status_file = open(STATUS_FILE,'w')
+        status_file.write("UNKNOWN\n3: %s" % message)
+        status_file.close()
 
     try:
         status, message = send_email_from_gmail(password)
@@ -120,16 +140,9 @@ if __name__ == "__main__":
         status = CRITICAL
         message = repr(e)
     finally:
+        d = {0: "OK", 1: "WARNING", 2: "CRITICAL", 3: "UNKNOWN"}
         status_file = open(STATUS_FILE,'w')
-        if status == OK:
-            status_file.write("OK\n0: %s" % message)
-        elif status == WARNING:
-            status_file.write("WARNING\n1: %s" % message)
-        elif status == CRITICAL:
-            status_file.write("CRITICAL\n2: %s" % message)
-        else:
-            status_file.write("UNKNOWN\n3: %s" % message)
-            status = UNKNOWN
+        status_file.write("{}\n{}: {}" % (d[status], status, message))
 
         status_file.close()
 
