@@ -82,7 +82,6 @@ def send_email_from_gmail(password):
 
     try:
         mail = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-        mail.ehlo()
         mail.login(sent_from, password)
         mail.sendmail(sent_from, sent_to, email_text)
         mail.close()
@@ -90,48 +89,48 @@ def send_email_from_gmail(password):
     except Exception as e:
         return UNKNOWN, str(e)
 
-        if __name__ == "__main__":
-            status, message = None, None
+if __name__ == "__main__":
+    status, message = None, None
 
-            if len(sys.argv) == 2:
-                password = sys.argv[1]
-            else:
-                password = "yourPassword"
+    if len(sys.argv) == 2:
+        password = sys.argv[1]
+    else:
+        password = "yourPassword"
 
-            status_file = open(STATUS_FILE, 'r')
-            message = status_file.read()
-            status_file.close()
+    status_file = open(STATUS_FILE, 'r')
+    message = status_file.read()
+    status_file.close()
 
-            try:
-                status, message = send_email_from_gmail(password)
-            except Exception as e:
-                status = UNKNOWN
-                message = repr(e)
-                status_file = open(STATUS_FILE,'w')
-                status_file.write("UNKNOWN\n3: %s" % message)
-                status_file.close()
+    try:
+        status, message = send_email_from_gmail(password)
+    except Exception as e:
+        status = UNKNOWN
+        message = repr(e)
+        status_file = open(STATUS_FILE,'w')
+        status_file.write("UNKNOWN\n3: %s" % message)
+        status_file.close()
 
-            time.sleep(600)
+    time.sleep(600)
 
-            try:
-                status, message = test_email_from_gmail(password)
-            except KeyboardInterrupt:
-                status, message = CRITICAL, "Caught Control-C..."
-            except Exception as e:
-                status = CRITICAL
-                message = repr(e)
-            finally:
-                status_file = open(STATUS_FILE,'w')
-                if status == OK:
-                    status_file.write("OK\n0: %s" % message)
-                elif status == WARNING:
-                    status_file.write("WARNING\n1: %s" % message)
-                elif status == CRITICAL:
-                    status_file.write("CRITICAL\n2: %s" % message)
-                else:
-                    status_file.write("UNKNOWN\n3: %s" % message)
-                    status = UNKNOWN
+    try:
+        status, message = test_email_from_gmail(password)
+    except KeyboardInterrupt:
+        status, message = CRITICAL, "Caught Control-C..."
+    except Exception as e:
+        status = CRITICAL
+        message = repr(e)
+    finally:
+        status_file = open(STATUS_FILE,'w')
+        if status == OK:
+            status_file.write("OK\n0: %s" % message)
+        elif status == WARNING:
+            status_file.write("WARNING\n1: %s" % message)
+        elif status == CRITICAL:
+            status_file.write("CRITICAL\n2: %s" % message)
+        else:
+            status_file.write("UNKNOWN\n3: %s" % message)
+            status = UNKNOWN
 
-                status_file.close()
+        status_file.close()
 
-                sys.exit(status)
+        sys.exit(status)
