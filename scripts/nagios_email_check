@@ -3,10 +3,23 @@
 #
 # This file is part of  BridgeDB, a Tor bridge distribution system.
 #
+# This scripts send an email to bridgedb requesting a bridge and check if the
+# service reply with a valid bridge. A status file is written in path specified
+# by STATUS_FILE.
+#
+# The STATUS_FILE is read by nagios that will send an alert whenever bridgedb
+# will not send a valid email response.
+#
+# Run via crontab
+# Ex: */10 * * * * <path_to_bridgedb>/scripts/nagios_email_check $(cat <path_to_email_key/gmail.key)
+#
 # :authors: hiro <hiro@torproject.org>
 #           see also AUTHORS file
 #
 # :license: This is Free Software. See LICENSE for license information.
+#
+#
+
 
 import sys
 import smtplib
