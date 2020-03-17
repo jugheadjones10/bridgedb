@@ -17,11 +17,18 @@ import copy
 import io
 import ipaddr
 import logging
+import tempfile
+import os
 
 from twisted.trial import unittest
 
+import bridgedb.Storage
+
 from bridgedb import Bridges
+from bridgedb import crypto
 from bridgedb.test import util
+from bridgedb.distributors.https.distributor import HTTPSDistributor
+from bridgedb.distributors.moat.distributor import MoatDistributor
 
 # For additional logger output for debugging, comment out the following:
 logging.disable(50)
@@ -153,3 +160,65 @@ class FixedBridgeSplitterTests(unittest.TestCase):
 
         # The first bridge's fingerprint should be within the data somewhere
         self.assertIn(first, data)
+
+
+class BridgeSplitterTests(unittest.TestCase):
+    """Unittests for :class:`bridgedb.Bridges.BridgeSplitter`."""
+
+    def setUp(self):
+
+        self.bridges = copy.deepcopy(util.generateFakeBridges())
+
+        self.fd, self.fname = tempfile.mkstemp(suffix=".sqlite", dir=os.getcwd())
+        bridgedb.Storage.initializeDBLock()
+        self.db = bridgedb.Storage.openDatabase(self.fname)
+        bridgedb.Storage.setDBFilename(self.fname)
+
+        key = 'fake-hmac-key'
+        self.splitter = Bridges.BridgeSplitter(key)
+        ringParams = Bridges.BridgeRingParameters(needPorts=[(443, 1)],
+                                                  needFlags=[("Stable", 1)])
+        https_distributor = HTTPSDistributor(
+            4,
+            crypto.getHMAC(key, "HTTPS-IP-Dist-Key"),
+            None,
+            answerParameters=ringParams)
+        moat_distributor = MoatDistributor(
+            4,
+            crypto.getHMAC(key, "Moat-Dist-Key"),
+            None,
+            answerParameters=ringParams)
+
+        self.splitter.addRing(https_distributor.hashring, "https", p=10)
+        self.splitter.addRing(moat_distributor.hashring, "moat", p=10)
+        self.https_ring = self.splitter.ringsByName.get("https")
+        self.moat_ring = self.splitter.ringsByName.get("moat")
+
+    def tearDown(self):
+        self.db.close()
+        os.close(self.fd)
+        os.unlink(self.fname)
+
+    def test_insert(self):
+        bridge = self.bridges[0]
+
+        # Assume a bridge wants to be distribute over HTTPS.
+        bridge.distribution_request = "https"
+        self.splitter.insert(bridge)
+        self.assertEqual(len(self.https_ring), 1)
+        self.assertEqual(len(self.moat_ring), 0)
+
+        # ...and now the bridge changes its mind and wants Moat.
+        bridge.distribution_request = "moat"
+        self.splitter.insert(bridge)
+        self.assertEqual(len(self.https_ring), 0)
+        self.assertEqual(len(self.moat_ring), 1)
+
+    def test_remove(self):
+        bridge = self.bridges[0]
+
+        self.https_ring.insert(bridge)
+        self.assertEqual(len(self.https_ring), 1)
+
+        self.https_ring.remove(bridge)
+        self.assertEqual(len(self.https_ring), 0)

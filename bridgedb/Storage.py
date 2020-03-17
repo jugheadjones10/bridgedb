@@ -182,17 +182,17 @@ class Database(object):
                     "FROM Bridges WHERE hex_key = ?", (h,))
         v = cur.fetchone()
         if v is not None:
-            i, ring = v
+            i, _ = v
             # Check if this is currently a valid ring name. If not, move back
             # into default pool.
-            if ring not in validRings:
-                ring = defaultPool
+            if setRing not in validRings:
+                setRing = defaultPool
             # Update last_seen, address, port and (possibly) distributor.
             cur.execute("UPDATE Bridges SET address = ?, or_port = ?, "
                         "distributor = ?, last_seen = ? WHERE id = ?",
-                        (str(bridge.address), bridge.orPort, ring,
+                        (str(bridge.address), bridge.orPort, setRing,
                          timeToStr(seenAt), i))
-            return ring
+            return setRing
         else:
             # Check if this is currently a valid ring name. If not, move back
             # into default pool.

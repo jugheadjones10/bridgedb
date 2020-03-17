@@ -411,8 +411,17 @@ class UnallocatedHolder(object):
     def __init__(self):
         self.fingerprints = []
 
+    def remove(self, bridge):
+        logging.debug("Removing %s from unallocated" % bridge.fingerprint)
+        i = -1
+        try:
+            i = self.fingerprints.index(bridge.fingerprint)
+        except ValueError:
+            return
+        del self.fingerprints[i]
+
     def insert(self, bridge):
-        logging.debug("Leaving %s unallocated", bridge.fingerprint)
+        logging.debug("Leaving %s unallocated" % bridge.fingerprint)
         if not bridge.fingerprint in self.fingerprints:
             self.fingerprints.append(bridge.fingerprint)
 
@@ -490,41 +499,44 @@ class BridgeSplitter(object):
         validRings = self.rings
         distribution_method = None
 
-        # If the bridge already has a distributor, use that.
         with bridgedb.Storage.getDB() as db:
             distribution_method = db.getBridgeDistributor(bridge, validRings)
 
         if distribution_method:
-            logging.info("%s bridge %s was already in hashring %s" %
+            logging.info("So far, %s bridge %s was in hashring %s" %
                          (self.__class__.__name__, bridge, distribution_method))
-        else:
-            # Check if the bridge requested a specific distribution method.
-            if bridge.distribution_request:
-                distribution_method = bridge.distribution_request
-                logging.info("%s bridge %s requested placement in hashring %s"
-                             % (self.__class__.__name__, bridge,
-                                distribution_method))
+            if distribution_method != bridge.distribution_request:
+                ring = self.ringsByName.get(distribution_method)
+                ring.remove(bridge)
 
-            # If they requested not to be distributed, honor the request:
-            if distribution_method == "none":
-                logging.info("%s bridge %s requested to not be distributed."
-                             % (self.__class__.__name__, bridge))
-                return
+        # Check if the bridge requested a specific distribution method and if
+        # so, use that instead.
+        if bridge.distribution_request:
+            distribution_method = bridge.distribution_request
+            logging.info("%s bridge %s requested placement in hashring %s"
+                            % (self.__class__.__name__, bridge,
+                            distribution_method))
 
-            # If we didn't know what they are talking about, or they requested
-            # "any" distribution method, and we've never seen this bridge
-            # before, then determine where to place it.
-            if ((distribution_method not in validRings) or
-                (distribution_method == "any")):
+        # If they requested not to be distributed, honor the request:
+        if distribution_method == "none":
+            logging.info("%s bridge %s requested to not be distributed."
+                         % (self.__class__.__name__, bridge))
+            return
 
-                pos = self.hmac(bridge.identity)
-                n = int(pos[:8], 16) % self.totalP
-                pos = bisect.bisect_right(self.pValues, n) - 1
-                assert 0 <= pos < len(self.rings)
-                distribution_method = self.rings[pos]
-                logging.info(("%s placing bridge %s into hashring %s (via n=%s,"
-                              " pos=%s).") % (self.__class__.__name__, bridge,
-                                              distribution_method, n, pos))
+        # If we didn't know what they are talking about, or they requested
+        # "any" distribution method, and we've never seen this bridge
+        # before, then deterministically determine where to place it.
+        if ((distribution_method not in validRings) or
+            (distribution_method == "any")):
+
+            pos = self.hmac(bridge.identity)
+            n = int(pos[:8], 16) % self.totalP
+            pos = bisect.bisect_right(self.pValues, n) - 1
+            assert 0 <= pos < len(self.rings)
+            distribution_method = self.rings[pos]
+            logging.info(("%s placing bridge %s into hashring %s (via n=%s,"
+                            " pos=%s).") % (self.__class__.__name__, bridge,
+                                            distribution_method, n, pos))
 
         with bridgedb.Storage.getDB() as db:
             ringname = db.insertBridgeAndGetRing(bridge, distribution_method,
@@ -587,6 +599,32 @@ class FilteredBridgeSplitter(object):
     def clear(self):
         self.bridges = []
         self.filterRings = {}
+
+    def remove(self, bridge):
+        """Remove a bridge from all appropriate sub-hashrings.
+
+        :type bridge: :class:`~bridgedb.bridges.Bridge`
+        :param bridge: The bridge to add.
+        """
+        logging.debug("Removing %s from hashring..." % bridge)
+
+        all_fingerprints = [b.fingerprint for b in self.bridges]
+        index = -1
+        try:
+            index = all_fingerprints.index(bridge.fingerprint)
+        except ValueError:
+            # The given bridge doesn't exist, so there's nothing to remove.
+            logging.warn("Was asked to remove non-existant bridge %s "
+                         "from ring." % bridge)
+            return
+        assert index > -1
+        del self.bridges[index]
+
+        for ringname, (filterFn, subring) in self.filterRings.items():
+            if filterFn(bridge):
+                subring.remove(bridge)
+                logging.debug("Removed bridge %s from %s subhashring." %
+                              (bridge, ringname))
 
     def insert(self, bridge):
         """Insert a bridge into all appropriate sub-hashrings.
