@@ -3,6 +3,13 @@
         Browser.  In addition to updating the instructions, this patch also
         links to instructions for Android.
 
+        * FIXES https://bugs.torproject.org/33631
+        So far, BridgeDB remembered only the first distribution mechanism it
+        ever learned for a given bridge.  That means that if a bridge would
+        change its mind and re-configure its distribution mechanism using
+        BridgeDistribution, BridgeDB would ignore it.  This patch changes this
+        behavior, so bridges can actually change their distribution mechanism.
+
         * FIXES https://bugs.torproject.org/31967
         Use a CSPRNG for selecting cached CAPTCHAs.
 

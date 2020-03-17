@@ -180,6 +180,14 @@ class BridgeRing(object):
         for tp, val, count, subring in self.subrings:
             subring.clear()
 
+    def remove(self, bridge):
+        """Remove a **bridge** from this hashring."""
+        for tp, val, _, subring in self.subrings:
+            subring.remove(bridge)
+        pos = self.hmac(bridge.identity)
+        if pos in self.bridges:
+            del self.bridges[pos]
+
     def insert(self, bridge):
         """Add a **bridge** to this hashring.
 
@@ -411,8 +419,17 @@ class UnallocatedHolder(object):
     def __init__(self):
         self.fingerprints = []
 
+    def remove(self, bridge):
+        logging.debug("Removing %s from unallocated" % bridge.fingerprint)
+        i = -1
+        try:
+            i = self.fingerprints.index(bridge.fingerprint)
+        except ValueError:
+            return
+        del self.fingerprints[i]
+
     def insert(self, bridge):
-        logging.debug("Leaving %s unallocated", bridge.fingerprint)
+        logging.debug("Leaving %s unallocated" % bridge.fingerprint)
         if not bridge.fingerprint in self.fingerprints:
             self.fingerprints.append(bridge.fingerprint)
 
@@ -488,43 +505,52 @@ class BridgeSplitter(object):
             return
 
         validRings = self.rings
-        distribution_method = None
+        distribution_method = orig_method = None
 
-        # If the bridge already has a distributor, use that.
         with bridgedb.Storage.getDB() as db:
-            distribution_method = db.getBridgeDistributor(bridge, validRings)
+            orig_method = db.getBridgeDistributor(bridge, validRings)
+            if orig_method is not None:
+                distribution_method = orig_method
+                logging.info("So far, bridge %s was in hashring %s" %
+                             (bridge, orig_method))
 
-        if distribution_method:
-            logging.info("%s bridge %s was already in hashring %s" %
-                         (self.__class__.__name__, bridge, distribution_method))
-        else:
-            # Check if the bridge requested a specific distribution method.
-            if bridge.distribution_request:
-                distribution_method = bridge.distribution_request
-                logging.info("%s bridge %s requested placement in hashring %s"
-                             % (self.__class__.__name__, bridge,
-                                distribution_method))
+        # Check if the bridge requested a distribution method and if so, try to
+        # use it.
+        if bridge.distribution_request:
+            distribution_method = bridge.distribution_request
+            logging.info("Bridge %s requested placement in hashring %s" %
+                         (bridge, distribution_method))
 
-            # If they requested not to be distributed, honor the request:
-            if distribution_method == "none":
-                logging.info("%s bridge %s requested to not be distributed."
-                             % (self.__class__.__name__, bridge))
-                return
+        # Is the bridge requesting a distribution method that's different
+        # from the one we have on record?  If so, we have to delete it from
+        # its previous ring.
+        if orig_method is not None and \
+           orig_method != distribution_method and \
+           distribution_method in (validRings + ["none"]):
+            logging.info("Bridge %s is in %s but wants to be in %s." %
+                            (bridge, orig_method, distribution_method))
+            prevRing = self.ringsByName.get(orig_method)
+            prevRing.remove(bridge)
 
-            # If we didn't know what they are talking about, or they requested
-            # "any" distribution method, and we've never seen this bridge
-            # before, then determine where to place it.
-            if ((distribution_method not in validRings) or
-                (distribution_method == "any")):
+        # If they requested not to be distributed, honor the request:
+        if distribution_method == "none":
+            logging.info("Bridge %s requested to not be distributed." % bridge)
+            return
 
-                pos = self.hmac(bridge.identity)
-                n = int(pos[:8], 16) % self.totalP
-                pos = bisect.bisect_right(self.pValues, n) - 1
-                assert 0 <= pos < len(self.rings)
-                distribution_method = self.rings[pos]
-                logging.info(("%s placing bridge %s into hashring %s (via n=%s,"
-                              " pos=%s).") % (self.__class__.__name__, bridge,
-                                              distribution_method, n, pos))
+        # If we didn't know what they are talking about, or they requested
+        # "any" distribution method, and we've never seen this bridge
+        # before, then deterministically determine where to place it.
+        if ((distribution_method not in validRings) or
+            (distribution_method == "any")):
+
+            pos = self.hmac(bridge.identity)
+            n = int(pos[:8], 16) % self.totalP
+            pos = bisect.bisect_right(self.pValues, n) - 1
+            assert 0 <= pos < len(self.rings)
+            distribution_method = self.rings[pos]
+            logging.info(("%s placing bridge %s into hashring %s (via n=%s,"
+                            " pos=%s).") % (self.__class__.__name__, bridge,
+                                            distribution_method, n, pos))
 
         with bridgedb.Storage.getDB() as db:
             ringname = db.insertBridgeAndGetRing(bridge, distribution_method,
@@ -587,6 +613,32 @@ class FilteredBridgeSplitter(object):
     def clear(self):
         self.bridges = []
         self.filterRings = {}
+
+    def remove(self, bridge):
+        """Remove a bridge from all appropriate sub-hashrings.
+
+        :type bridge: :class:`~bridgedb.bridges.Bridge`
+        :param bridge: The bridge to add.
+        """
+        logging.debug("Removing %s from hashring..." % bridge)
+
+        all_fingerprints = [b.fingerprint for b in self.bridges]
+        index = -1
+        try:
+            index = all_fingerprints.index(bridge.fingerprint)
+        except ValueError:
+            # The given bridge doesn't exist, so there's nothing to remove.
+            logging.warn("Was asked to remove non-existant bridge %s "
+                         "from ring." % bridge)
+            return
+        assert index > -1
+        del self.bridges[index]
+
+        for ringname, (filterFn, subring) in self.filterRings.items():
+            if filterFn(bridge):
+                subring.remove(bridge)
+                logging.debug("Removed bridge %s from %s subhashring." %
+                              (bridge, ringname))
 
     def insert(self, bridge):
         """Insert a bridge into all appropriate sub-hashrings.
