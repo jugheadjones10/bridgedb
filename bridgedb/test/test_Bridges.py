@@ -178,19 +178,19 @@ class BridgeSplitterTests(unittest.TestCase):
         self.splitter = Bridges.BridgeSplitter(key)
         ringParams = Bridges.BridgeRingParameters(needPorts=[(443, 1)],
                                                   needFlags=[("Stable", 1)])
-        https_distributor = HTTPSDistributor(
+        self.https_distributor = HTTPSDistributor(
             4,
             crypto.getHMAC(key, "HTTPS-IP-Dist-Key"),
             None,
             answerParameters=ringParams)
-        moat_distributor = MoatDistributor(
+        self.moat_distributor = MoatDistributor(
             4,
             crypto.getHMAC(key, "Moat-Dist-Key"),
             None,
             answerParameters=ringParams)
 
-        self.splitter.addRing(https_distributor.hashring, "https", p=10)
-        self.splitter.addRing(moat_distributor.hashring, "moat", p=10)
+        self.splitter.addRing(self.https_distributor.hashring, "https", p=10)
+        self.splitter.addRing(self.moat_distributor.hashring, "moat", p=10)
         self.https_ring = self.splitter.ringsByName.get("https")
         self.moat_ring = self.splitter.ringsByName.get("moat")
 
@@ -214,10 +214,13 @@ class BridgeSplitterTests(unittest.TestCase):
         self.assertEqual(len(self.https_ring), 0)
         self.assertEqual(len(self.moat_ring), 1)
 
+        # self.splitter.filterRings()
+
     def test_remove(self):
         bridge = self.bridges[0]
 
         self.https_ring.insert(bridge)
+        self.https_distributor.prepopulateRings()
         self.assertEqual(len(self.https_ring), 1)
 
         self.https_ring.remove(bridge)

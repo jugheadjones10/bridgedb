@@ -180,6 +180,13 @@ class BridgeRing(object):
         for tp, val, count, subring in self.subrings:
             subring.clear()
 
+    def remove(self, bridge):
+        for tp, val, _, subring in self.subrings:
+            subring.remove(bridge)
+        pos = self.hmac(bridge.identity)
+        if pos in self.bridges:
+            del self.bridges[pos]
+
     def insert(self, bridge):
         """Add a **bridge** to this hashring.
 
