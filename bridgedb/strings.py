@@ -182,23 +182,10 @@ HOWTO_TBB = {
     0: _("""How to start using your bridges"""),
     # TRANSLATORS: Please DO NOT translate "Tor Browser".
     1: _("""\
-To enter bridges into Tor Browser, first go to the %s Tor Browser download
-page %s and then follow the instructions there for downloading and starting
-Tor Browser."""),
-    # TRANSLATORS: Please DO NOT translate "Tor".
-    2: _("""\
-When the 'Tor Network Settings' dialogue pops up, click 'Configure' and follow
-the wizard until it asks:"""),
-    # TRANSLATORS: Please DO NOT translate "Tor".
-    3: _("""\
-Does your Internet Service Provider (ISP) block or otherwise censor connections
-to the Tor network?"""),
-    # TRANSLATORS: Please DO NOT translate "Tor".
-    4: _("""\
-Select 'Yes' and then click 'Next'. To configure your new bridges, copy and
-paste the bridge lines into the text input box. Finally, click 'Connect', and
-you should be good to go! If you experience trouble, try clicking the 'Help'
-button in the 'Tor Network Settings' wizard for further assistance."""),
+ First, you need to %sdownload Tor Browser%s. Our Tor Browser User
+ Manual explains how you can add your bridges to Tor Browser. If you are
+ using Windows, Linux, or OS X, %sclick here%s to learn more. If you
+ are using Android, %sclick here%s."""),
 }
 
 EMAIL_COMMANDS = {
@@ -307,7 +294,7 @@ EMAIL_SPRINTF = {
     # Goes into the "%s without Pluggable Transport %s" part of ``WELCOME[2]``
     "WELCOME2": ("-", "-"),
     # For the "%s Tor Browser download page %s" part of ``HOWTO_TBB[1]``
-    "HOWTO_TBB1": ("", "[0]"),
+    "HOWTO_TBB1": ("", "[0]", "", "[1]", "", "[2]"),
     # For the "you should email %s" in ``HELP[0]``
     "HELP0": ("frontdesk@torproject.org"),
 }
@@ -344,7 +331,9 @@ BridgeDB can provide bridges with several types of Pluggable Transports[0],
 
 EMAIL_REFERENCE_LINKS = {
     "WELCOME0": "[0]: https://www.torproject.org/docs/pluggable-transports.html",
-    "HOWTO_TBB1": "[0]: https://www.torproject.org/projects/torbrowser.html",
+    "HOWTO_TBB1": "[0]: https://www.torproject.org/download/",
+    "HOWTO_TBB2": "[1]: https://tb-manual.torproject.org/bridges/#entering-bridge-addresses",
+    "HOWTO_TBB3": "[2]: https://tb-manual.torproject.org/mobile-tor/#circumvention",
 }
 
 BRIDGEDB_OPENPGP_KEY = """\
