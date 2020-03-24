@@ -389,7 +389,7 @@ class GimpCaptcha(Captcha):
             and a challenge string (used for checking the client's solution).
         """
         try:
-            imageFilename = random.choice(os.listdir(self.cacheDir))
+            imageFilename = random.SystemRandom().choice(os.listdir(self.cacheDir))
             imagePath = os.path.join(self.cacheDir, imageFilename)
             with open(imagePath, 'rb') as imageFile:
                 self.image = imageFile.read()
