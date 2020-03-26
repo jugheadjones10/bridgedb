@@ -372,46 +372,6 @@ class BridgeRing(object):
             f.write("%s %s\n" % (b.fingerprint, " ".join(desc).strip()))
 
 
-class FixedBridgeSplitter(object):
-    """Splits bridges up based on an HMAC and assigns them to one of several
-    subhashrings with equal probability.
-    """
-    def __init__(self, key, rings):
-        self.hmac = getHMACFunc(key, hex=True)
-        self.rings = rings[:]
-
-    def insert(self, bridge):
-        # Grab the first 4 bytes
-        digest = self.hmac(bridge.identity)
-        pos = int( digest[:8], 16 )
-        which = pos % len(self.rings)
-        self.rings[which].insert(bridge)
-
-    def clear(self):
-        """Clear all bridges from every ring in ``rings``."""
-        for r in self.rings:
-            r.clear()
-
-    def __len__(self):
-        """Returns the total number of bridges in all ``rings``."""
-        total = 0
-        for ring in self.rings:
-            total += len(ring)
-        return total
-
-    def dumpAssignments(self, filename, description=""):
-        """Write all bridges assigned to this hashring to ``filename``.
-
-        :param string description: If given, include a description next to the
-            index number of the ring from :attr:`FilteredBridgeSplitter.rings`
-            the following bridges were assigned to. For example, if the
-            description is ``"IPv6 obfs2 bridges"`` the line would read:
-            ``"IPv6 obfs2 bridges ring=3"``.
-        """
-        for index, ring in zip(range(len(self.rings)), self.rings):
-            ring.dumpAssignments(filename, "%s ring=%s" % (description, index))
-
-
 class UnallocatedHolder(object):
     """A pseudo-bridgeholder that ignores its bridges and leaves them
        unassigned.

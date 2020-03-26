@@ -120,48 +120,6 @@ class BridgeRingTests(unittest.TestCase):
         self.assertIn(first, data)
 
 
-class FixedBridgeSplitterTests(unittest.TestCase):
-    """Unittests for :class:`bridgedb.Bridges.FixedBridgeSplitter`."""
-
-    def setUp(self):
-        self.rings = [Bridges.BridgeRing('fake-hmac-key-1'),
-                      Bridges.BridgeRing('fake-hmac-key-2')]
-        self.splitter = Bridges.FixedBridgeSplitter('fake-hmac-key', self.rings)
-
-    def addRandomBridges(self):
-        bridges = copy.deepcopy(util.generateFakeBridges())
-
-        [self.splitter.insert(bridge) for bridge in bridges]
-
-    def test_insert(self):
-        self.addRandomBridges()
-        self.assertGreater(len(self.splitter), 0)
-
-    def test_clear(self):
-        """Clear should get rid of all the inserted bridges."""
-        self.addRandomBridges()
-        self.assertGreater(len(self.splitter), 0)
-        self.splitter.clear()
-        self.assertEqual(len(self.splitter), 0)
-
-    def test_dumpAssignments(self):
-        """This should dump the bridges to the file."""
-        self.addRandomBridges()
-
-        f = io.StringIO()
-
-        self.splitter.dumpAssignments(f)
-
-        f.flush()
-        f.seek(0)
-
-        data = f.read()
-        first = list(self.splitter.rings[0].bridges.values())[0].fingerprint
-
-        # The first bridge's fingerprint should be within the data somewhere
-        self.assertIn(first, data)
-
-
 class BridgeSplitterTests(unittest.TestCase):
     """Unittests for :class:`bridgedb.Bridges.BridgeSplitter`."""
 
