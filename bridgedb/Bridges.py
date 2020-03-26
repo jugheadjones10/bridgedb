@@ -593,7 +593,8 @@ class FilteredBridgeSplitter(object):
                    I-guess-it-passes-for-some-sort-of-hashring classes in this
                    module.
         :ivar hmac: DOCDOC
-        :ivar bridges: DOCDOC
+        :ivar bridges: A dictionary mapping a bridge's fingerprint to its
+             :class:`~bridgedb.bridges.Bridge` object.
         :type distributorName: str
         :ivar distributorName: The name of this splitter's distributor. See
              :meth:`~bridgedb.distributors.https.distributor.HTTPSDistributor.setDistributorName`.
@@ -601,7 +602,7 @@ class FilteredBridgeSplitter(object):
         self.key = key
         self.filterRings = {}
         self.hmac = getHMACFunc(key, hex=True)
-        self.bridges = []
+        self.bridges = {}
         self.distributorName = ''
 
         #XXX: unused
@@ -611,28 +612,23 @@ class FilteredBridgeSplitter(object):
         return len(self.bridges)
 
     def clear(self):
-        self.bridges = []
+        self.bridges = {}
         self.filterRings = {}
 
     def remove(self, bridge):
         """Remove a bridge from all appropriate sub-hashrings.
 
         :type bridge: :class:`~bridgedb.bridges.Bridge`
-        :param bridge: The bridge to add.
+        :param bridge: The bridge to remove.
         """
         logging.debug("Removing %s from hashring..." % bridge)
 
-        all_fingerprints = [b.fingerprint for b in self.bridges]
-        index = -1
         try:
-            index = all_fingerprints.index(bridge.fingerprint)
-        except ValueError:
-            # The given bridge doesn't exist, so there's nothing to remove.
+            del self.bridges[bridge.fingerprint]
+        except KeyError:
             logging.warn("Was asked to remove non-existant bridge %s "
                          "from ring." % bridge)
             return
-        assert index > -1
-        del self.bridges[index]
 
         for ringname, (filterFn, subring) in self.filterRings.items():
             if filterFn(bridge):
@@ -655,15 +651,9 @@ class FilteredBridgeSplitter(object):
                           "bridge: %s") % bridge)
             return
 
-        index = 0
         logging.debug("Inserting %s into hashring..." % bridge)
-        for old_bridge in self.bridges[:]:
-            if bridge.fingerprint == old_bridge.fingerprint:
-                self.bridges[index] = bridge
-                break
-            index += 1
-        else:
-            self.bridges.append(bridge)
+        self.bridges[bridge.fingerprint] = bridge
+
         for ringname, (filterFn, subring) in self.filterRings.items():
             if filterFn(bridge):
                 subring.insert(bridge)
@@ -747,7 +737,7 @@ class FilteredBridgeSplitter(object):
 
         if populate_from:
             inserted = 0
-            for bridge in populate_from:
+            for bridge in populate_from.values():
                 if isinstance(bridge, Bridge) and filterFn(bridge):
                     subring.insert(bridge)
                     inserted += 1
@@ -761,7 +751,7 @@ class FilteredBridgeSplitter(object):
         # bridges may be present in multiple filter sets
         # only one line should be dumped per bridge
 
-        for b in self.bridges:
+        for b in self.bridges.values():
             # gather all the filter descriptions
             desc = []
             for n,(g,r) in self.filterRings.items():
