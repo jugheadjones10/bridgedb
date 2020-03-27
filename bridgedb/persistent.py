@@ -23,7 +23,7 @@ except (ImportError, NameError):  # pragma: no cover
 from twisted.python.reflect import safe_repr
 from twisted.spread import jelly
 
-from bridgedb import Bridges
+from bridgedb import bridgerings
 from bridgedb import filters
 from bridgedb.distributors.email import distributor as emailDistributor
 from bridgedb.distributors.https import distributor as httpsDistributor
@@ -35,7 +35,10 @@ _state = None
 #: Types and classes which are allowed to be jellied:
 _security = jelly.SecurityOptions()
 #_security.allowInstancesOf(ProxySet)
-_security.allowModules(filters, Bridges, emailDistributor, httpsDistributor)
+_security.allowModules(filters,
+                       bridgerings,
+                       emailDistributor,
+                       httpsDistributor)
 
 
 class MissingState(Exception):
@@ -91,8 +94,8 @@ class State(jelly.Jellyable):
         modules which are known to be unjelliable/unpicklable so far are:
 
           - bridgedb.Dist
-          - bridgedb.Bridges, and all "splitter" and "ring" classes contained
-            within
+          - bridgedb.bridgerings, and all "splitter" and "ring" classes
+            contained within
 
         :property statefile: The filename to retrieve a pickled, jellied
             :class:`~bridgedb.persistent.State` instance from. (default:

@@ -9,7 +9,7 @@
 # :license: see LICENSE for licensing information
 #_____________________________________________________________________________
 
-"""Unittests for :mod:`bridgedb.Bridges`."""
+"""Unittests for :mod:`bridgedb.bridgerings`."""
 
 from __future__ import print_function
 
@@ -20,20 +20,20 @@ import logging
 
 from twisted.trial import unittest
 
-from bridgedb import Bridges
+from bridgedb import bridgerings
 from bridgedb.test import util
 
 # For additional logger output for debugging, comment out the following:
 logging.disable(50)
 # and then uncomment the following line:
-#Bridges.logging.getLogger().setLevel(10)
+#bridgerings.logging.getLogger().setLevel(10)
 
 
 class BridgeRingTests(unittest.TestCase):
-    """Unittests for :class:`bridgedb.Bridges.BridgeRing`."""
+    """Unittests for :class:`bridgedb.bridgerings.BridgeRing`."""
 
     def setUp(self):
-        self.ring = Bridges.BridgeRing('fake-hmac-key')
+        self.ring = bridgerings.BridgeRing('fake-hmac-key')
 
     def addRandomBridges(self):
         bridges = copy.deepcopy(util.generateFakeBridges())
@@ -92,7 +92,7 @@ class BridgeRingTests(unittest.TestCase):
         filtering by distinct subnets.
         """
         self.addRandomBridges()
-        bridges = self.ring.getBridges(b'a' * Bridges.DIGEST_LEN, N=3, filterBySubnet=True)
+        bridges = self.ring.getBridges(b'a' * bridgerings.DIGEST_LEN, N=3, filterBySubnet=True)
         self.assertEqual(len(bridges), 3)
 
     def test_dumpAssignments(self):
@@ -114,12 +114,12 @@ class BridgeRingTests(unittest.TestCase):
 
 
 class FixedBridgeSplitterTests(unittest.TestCase):
-    """Unittests for :class:`bridgedb.Bridges.FixedBridgeSplitter`."""
+    """Unittests for :class:`bridgedb.bridgerings.FixedBridgeSplitter`."""
 
     def setUp(self):
-        self.rings = [Bridges.BridgeRing('fake-hmac-key-1'),
-                      Bridges.BridgeRing('fake-hmac-key-2')]
-        self.splitter = Bridges.FixedBridgeSplitter('fake-hmac-key', self.rings)
+        self.rings = [bridgerings.BridgeRing('fake-hmac-key-1'),
+                      bridgerings.BridgeRing('fake-hmac-key-2')]
+        self.splitter = bridgerings.FixedBridgeSplitter('fake-hmac-key', self.rings)
 
     def addRandomBridges(self):
         bridges = copy.deepcopy(util.generateFakeBridges())

@@ -20,8 +20,8 @@ import random
 from twisted.trial import unittest
 
 from bridgedb.bridges import PluggableTransport
-from bridgedb.Bridges import BridgeRing
-from bridgedb.Bridges import BridgeRingParameters
+from bridgedb.bridgerings import BridgeRing
+from bridgedb.bridgerings import BridgeRingParameters
 from bridgedb.filters import byIPv4
 from bridgedb.filters import byIPv6
 from bridgedb.distributors.https import distributor

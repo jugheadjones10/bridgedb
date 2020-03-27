@@ -22,7 +22,7 @@ import warnings
 from twisted.trial import unittest
 
 from bridgedb import bridges
-from bridgedb.Bridges import FilteredBridgeSplitter
+from bridgedb.bridgerings import FilteredBridgeSplitter
 from bridgedb.bridgerequest import BridgeRequestBase
 from bridgedb.parse import descriptors
 from bridgedb.parse.addr import PortList
@@ -143,14 +143,14 @@ XILT4o+SveEQUG72R4bENsKxqV4rRNh1g6CNAbYhAITqrU9B+jImDgrBBW+XWT5K
 class BridgeIntegrationTests(unittest.TestCase):
     """Integration tests to ensure that the new :class:`bridgedb.bridges.Bridge`
     class has compatible behaviour with the expected behaviour of the old
-    :class:`bridgedb.Bridges.Bridge` class.
+    :class:`bridgedb.bridgerings.Bridge` class.
 
     .. data: OldTest (enum)
 
     These tests were refactored from the old tests for
     ``deprecated.Bridge`, which lived in
-    ``lib/bridgedb/test/test_Bridges.py``. For the translations from the old
-    tests in ``test_Bridges.BridgeClassTest`` to their new
+    ``lib/bridgedb/test/test_bridgerings.py``. For the translations from the
+    old tests in ``test_bridgerings.BridgeClassTest`` to their new
     equivalents here in ``test_bridges.BridgeIntegrationTests``,
     which should test for the same things as their old equivalents, see the
     following table:
@@ -183,7 +183,7 @@ class BridgeIntegrationTests(unittest.TestCase):
 
     def test_integration_init_0(self):
         """Ensure that we can initialise the new :class:`bridgedb.bridges.Bridge`
-        class in the same manner as the old :class:`bridgedb.Bridges.Bridge`
+        class in the same manner as the old :class:`bridgedb.bridgerings.Bridge`
         class. This test ensures that initialisation with a fingerprint is
         successful.
         """
@@ -193,7 +193,7 @@ class BridgeIntegrationTests(unittest.TestCase):
 
     def test_integration_init_1(self):
         """Ensure that we can initialise the new :class:`bridgedb.bridges.Bridge`
-        class in the same manner as the old :class:`bridgedb.Bridges.Bridge`
+        class in the same manner as the old :class:`bridgedb.bridgerings.Bridge`
         class. This test ensures that initialisation with a digest of a
         bridge's ID key is successful.
         """
