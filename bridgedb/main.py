@@ -41,7 +41,7 @@ from bridgedb.parse.blacklist import parseBridgeBlacklistFile
 
 import bridgedb.Storage
 
-from bridgedb import Bridges
+from bridgedb import bridgerings
 from bridgedb.Stability import updateBridgeHistory
 
 
@@ -59,7 +59,7 @@ def expandBridgeAuthDir(authdir, filename):
 def writeAssignments(hashring, filename):
     """Dump bridge distributor assignments to disk.
 
-    :type hashring: A :class:`~bridgedb.Bridges.BridgeSplitter`
+    :type hashring: A :class:`~bridgedb.bridgerings.BridgeSplitter`
     :ivar hashring: A class which takes an HMAC key and splits bridges
         into their hashring assignments.
     :param str filename: The filename to write the assignments to.
@@ -98,7 +98,7 @@ def load(state, hashring, clear=False):
     store them into our ``state.hashring`` instance. The ``state`` will be
     saved again at the end of this function.
 
-    :type hashring: :class:`~bridgedb.Bridges.BridgeSplitter`
+    :type hashring: :class:`~bridgedb.bridgerings.BridgeSplitter`
     :param hashring: A class which provides a mechanism for HMACing
         Bridges in order to assign them to hashrings.
     :param boolean clear: If True, clear all previous bridges from the
@@ -248,19 +248,19 @@ def createBridgeRings(cfg, proxyList, key):
         known open proxies.
     :param bytes key: Hashring master key
     :rtype: tuple
-    :returns: A :class:`~bridgedb.Bridges.BridgeSplitter` hashring, an
+    :returns: A :class:`~bridgedb.bridgerings.BridgeSplitter` hashring, an
         :class:`~bridgedb.distributors.https.distributor.HTTPSDistributor` or None, and an
         :class:`~bridgedb.distributors.email.distributor.EmailDistributor` or None, and an
         :class:`~bridgedb.distributors.moat.distributor.MoatDistributor` or None.
     """
     # Create a BridgeSplitter to assign the bridges to the different
     # distributors.
-    hashring = Bridges.BridgeSplitter(crypto.getHMAC(key, "Hashring-Key"))
+    hashring = bridgerings.BridgeSplitter(crypto.getHMAC(key, "Hashring-Key"))
     logging.debug("Created hashring: %r" % hashring)
 
     # Create ring parameters.
-    ringParams = Bridges.BridgeRingParameters(needPorts=cfg.FORCE_PORTS,
-                                              needFlags=cfg.FORCE_FLAGS)
+    ringParams = bridgerings.BridgeRingParameters(needPorts=cfg.FORCE_PORTS,
+                                                  needFlags=cfg.FORCE_FLAGS)
 
     emailDistributor = ipDistributor = moatDistributor = None
 
@@ -297,7 +297,7 @@ def createBridgeRings(cfg, proxyList, key):
 
     # As appropriate, tell the hashring to leave some bridges unallocated.
     if cfg.RESERVED_SHARE:
-        hashring.addRing(Bridges.UnallocatedHolder(),
+        hashring.addRing(bridgerings.UnallocatedHolder(),
                          "unallocated",
                          cfg.RESERVED_SHARE)
 
@@ -394,7 +394,7 @@ def run(options, reactor=reactor):
         :ivar cfg: The current configuration, including any in-memory
             settings (i.e. settings whose values were not obtained from the
             config file, but were set via a function somewhere)
-        :type hashring: A :class:`~bridgedb.Bridges.BridgeSplitter`
+        :type hashring: A :class:`~bridgedb.bridgerings.BridgeSplitter`
         :ivar hashring: A class which takes an HMAC key and splits bridges
             into their hashring assignments.
         """

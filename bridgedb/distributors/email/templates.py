@@ -96,14 +96,9 @@ def addHowto(template):
     """
     howToTBB  = template.gettext(strings.HOWTO_TBB[1]) % strings.EMAIL_SPRINTF["HOWTO_TBB1"]
     howToTBB += u'\n\n'
-    howToTBB += template.gettext(strings.HOWTO_TBB[2])
-    howToTBB += u'\n\n'
-    howToTBB += u'\n'.join(["> {0}".format(ln) for ln in
-                            template.gettext(strings.HOWTO_TBB[3]).split('\n')])
-    howToTBB += u'\n\n'
-    howToTBB += template.gettext(strings.HOWTO_TBB[4])
-    howToTBB += u'\n\n'
     howToTBB += strings.EMAIL_REFERENCE_LINKS.get("HOWTO_TBB1")
+    howToTBB += strings.EMAIL_REFERENCE_LINKS.get("HOWTO_TBB2")
+    howToTBB += strings.EMAIL_REFERENCE_LINKS.get("HOWTO_TBB3")
     howToTBB += u'\n\n'
     return howToTBB
 

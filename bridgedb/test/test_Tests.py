@@ -71,23 +71,23 @@ def monkeypatchTests():
     :func:`~bridgedb.parse.networkstatus.parseALine`, with the older,
     :func:`deprecated one <deprecated.parseORAddressLine>` (the
     old function was previously located at
-    ``bridgedb.Bridges.parseORAddressLine``).
+    ``bridgedb.bridgerings.parseORAddressLine``).
 
     The second patch replaces the new :class:`~bridgedb.parse.addr.PortList`,
     with the :class:`older one <deprecated.PortList>` (which
-    was previously located at ``bridgedb.Bridges.PortList``).
+    was previously located at ``bridgedb.bridgerings.PortList``).
 
     The third, forth, and fifth monkeypatches add some module-level attributes
-    back into :mod:`bridgedb.Bridges`.
+    back into :mod:`bridgedb.bridgerings`.
 
     :rtype: :api:`~twisted.python.monkey.MonkeyPatcher`
     :returns: A :api:`~twisted.python.monkey.MonkeyPatcher`, preloaded with
               patches from :mod:`deprecated`.
     """
     patcher = monkey.MonkeyPatcher()
-    patcher.addPatch(Tests.bridgedb.Bridges, 'PluggableTransport',
+    patcher.addPatch(Tests.bridgedb.bridgerings, 'PluggableTransport',
                      deprecated.PluggableTransport)
-    patcher.addPatch(Tests.bridgedb.Bridges, 'Bridge',
+    patcher.addPatch(Tests.bridgedb.bridgerings, 'Bridge',
                      deprecated.Bridge)
     return patcher
 
