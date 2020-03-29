@@ -16,6 +16,7 @@ Adapted from recipe here_.
 """
 
 import urllib
+import urllib.parse
 from docutils import nodes, utils
 
 def make_trac_link(name, rawtext, text, lineno, inliner,
@@ -33,7 +34,7 @@ def make_trac_link(name, rawtext, text, lineno, inliner,
     env = inliner.document.settings.env
     base_url =  env.config.traclinks_base_url
     label = utils.unescape('ticket #' + label)
-    ref = base_url + urllib.quote(full_name, safe='')
+    ref = base_url + urllib.parse.quote(full_name, safe='')
     node = nodes.reference(rawtext, label, refuri=ref, **options)
 
     return [node],[]

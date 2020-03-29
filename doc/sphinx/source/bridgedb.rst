@@ -7,8 +7,8 @@ Packages & Modules
     :toctree:
 
     bridgedb.bridgerequest
+    bridgedb.bridgerings
     bridgedb.bridges
-    bridgedb.Bridges
     bridgedb.captcha
     bridgedb.configure
     bridgedb.distribute

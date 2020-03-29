@@ -174,7 +174,7 @@ randomValidIPString   = valid(randomIPString)
 _FAKE_BRIDGES = []
 
 def generateFakeBridges(n=500):
-    """Generate a set of **n** :class:`~bridgedb.bridges.Bridges` with random
+    """Generate a set of **n** :class:`~bridgedb.bridges.Bridge`s with random
     data.
     """
     from bridgedb.bridges import Bridge
@@ -305,7 +305,7 @@ class DummyBridge(object):
 
 @implementer(IBridge)
 class DummyMaliciousBridge(DummyBridge):
-    """A mock :class:`bridgedb.Bridges.Bridge` which only supports a mocked
+    """A mock :class:`bridgedb.bridges.Bridge` which only supports a mocked
     ``getConfigLine`` method and which maliciously insert an additional fake
     bridgeline and some javascript into its PT arguments.
     """

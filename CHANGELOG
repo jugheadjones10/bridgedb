@@ -1,3 +1,7 @@
+        * FIXES https://bugs.torproject.org/29686
+        Rename files that contain "Bridges" to "bridgerings", to eliminate
+        headache on file systems that are case insensitive.
+
         * FIXES https://bugs.torproject.org/30317
         Update our "howto" box, which explains how one adds bridges to Tor
         Browser.  In addition to updating the instructions, this patch also

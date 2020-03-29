@@ -1,7 +1,7 @@
-bridgedb.Bridges
-----------------
+bridgedb.bridgerings
+--------------------
 
-.. automodule:: bridgedb.Bridges
+.. automodule:: bridgedb.bridgerings
     :members:
     :undoc-members:
     :private-members:

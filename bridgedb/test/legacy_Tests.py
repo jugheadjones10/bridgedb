@@ -17,7 +17,7 @@ import warnings
 import time
 from datetime import datetime
 
-import bridgedb.Bridges
+import bridgedb.bridgerings
 import bridgedb.main
 import bridgedb.schedule
 import bridgedb.Storage

@@ -30,7 +30,7 @@ class MoatDistributor(HTTPSDistributor):
     :type proxies: :class:`~bridgedb.proxies.ProxySet`
     :ivar proxies: All known proxies, which we treat differently. See
         :param:`proxies`.
-    :type hashring: :class:`bridgedb.Bridges.FilteredBridgeSplitter`
+    :type hashring: :class:`bridgedb.bridgerings.FilteredBridgeSplitter`
     :ivar hashring: A hashring that assigns bridges to subrings with fixed
         proportions. Used to assign bridges into the subrings of this
         distributor.
@@ -54,7 +54,8 @@ class MoatDistributor(HTTPSDistributor):
             the extra cluster, and any client requesting bridges from one of
             these **proxies** will be distributed bridges from a separate
             subhashring that is specific to Tor/proxy users.
-        :type answerParameters: :class:`bridgedb.Bridges.BridgeRingParameters`
+        :type answerParameters:
+            :class:`bridgedb.bridgerings.BridgeRingParameters`
         :param answerParameters: A mechanism for ensuring that the set of
             bridges that this distributor answers a client with fit certain
             parameters, i.e. that an answer has "at least two obfsproxy

@@ -27,8 +27,8 @@ import logging
 import bridgedb.Storage
 
 from bridgedb import proxy
-from bridgedb.Bridges import BridgeRing
-from bridgedb.Bridges import FilteredBridgeSplitter
+from bridgedb.bridgerings import BridgeRing
+from bridgedb.bridgerings import FilteredBridgeSplitter
 from bridgedb.crypto import getHMAC
 from bridgedb.crypto import getHMACFunc
 from bridgedb.distribute import Distributor
@@ -45,7 +45,7 @@ class HTTPSDistributor(Distributor):
     :type proxies: :class:`~bridgedb.proxies.ProxySet`
     :ivar proxies: All known proxies, which we treat differently. See
         :param:`proxies`.
-    :type hashring: :class:`bridgedb.Bridges.FilteredBridgeSplitter`
+    :type hashring: :class:`bridgedb.bridgerings.FilteredBridgeSplitter`
     :ivar hashring: A hashring that assigns bridges to subrings with fixed
         proportions. Used to assign bridges into the subrings of this
         distributor.
@@ -69,7 +69,8 @@ class HTTPSDistributor(Distributor):
             the extra cluster, and any client requesting bridges from one of
             these **proxies** will be distributed bridges from a separate
             subhashring that is specific to Tor/proxy users.
-        :type answerParameters: :class:`bridgedb.Bridges.BridgeRingParameters`
+        :type answerParameters:
+            :class:`bridgedb.bridgerings.BridgeRingParameters`
         :param answerParameters: A mechanism for ensuring that the set of
             bridges that this distributor answers a client with fit certain
             parameters, i.e. that an answer has "at least two obfsproxy
@@ -293,7 +294,7 @@ class HTTPSDistributor(Distributor):
         :param str interval: The time period when we got this request.  This
             can be any string, so long as it changes with every period.
         :rtype: list
-        :return: A list of :class:`~bridgedb.Bridges.Bridge`s to include in
+        :return: A list of :class:`~bridgedb.bridgerings.Bridge`s to include in
             the response. See
             :meth:`bridgedb.distributors.https.server.WebResourceBridges.getBridgeRequestAnswer`
             for an example of how this is used.
