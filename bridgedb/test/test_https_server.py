@@ -243,7 +243,7 @@ class HowtoResourceTests(unittest.TestCase):
         request = DummyRequest([self.pagename])
         request.method = b'GET'
         page = self.howtoResource.render_GET(request)
-        self.assertSubstring(b"the wizard", page)
+        self.assertSubstring(b"How to start using your bridges", page)
 
     def test_HowtoResource_render_GET_lang_ru(self):
         """renderGet() with ?lang=ru should return the howto page in Russian."""
@@ -255,7 +255,7 @@ class HowtoResourceTests(unittest.TestCase):
         request.method = b'GET'
         request.addArg(b'lang', 'ru')
         page = self.howtoResource.render_GET(request)
-        self.assertSubstring("следовать инструкциям установщика".encode("utf-8"), page)
+        self.assertSubstring("Как использовать мосты".encode("utf-8"), page)
 
 
 class CaptchaProtectedResourceTests(unittest.TestCase):
@@ -765,7 +765,7 @@ class BridgesResourceTests(unittest.TestCase):
         page = self.bridgesResource.render(request)
 
         # The response should explain how to use the bridge lines:
-        self.assertTrue("To enter bridges into Tor Browser" in str(page))
+        self.assertTrue("How to start using your bridges" in str(page))
 
         for b in self.parseBridgesFromHTMLPage(page):
             # Check that each bridge line had the expected number of fields:
@@ -798,7 +798,7 @@ class BridgesResourceTests(unittest.TestCase):
         self.bridgesResource.useForwardedHeader = False  # Reset it
 
         # The response should explain how to use the bridge lines:
-        self.assertTrue("To enter bridges into Tor Browser" in str(page))
+        self.assertTrue("How to start using your bridges" in str(page))
 
     def test_render_GET_RTLlang(self):
         """Test rendering a request for plain bridges in Arabic."""

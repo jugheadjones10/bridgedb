@@ -1,3 +1,16 @@
+        * FIXES https://bugs.torproject.org/30317
+        Update our "howto" box, which explains how one adds bridges to Tor
+        Browser.  In addition to updating the instructions, this patch also
+        links to instructions for Android.
+
+        * FIXES https://bugs.torproject.org/31967
+        Use a CSPRNG for selecting cached CAPTCHAs.
+
+        * FIXES https://bugs.torproject.org/33008
+        Add an info page, available at bridges.torproject.org/info.  Relay
+        Search links to this info page to explain to bridge operators what their
+        bridge distribution mechanism means.
+
 Changes in version 0.9.4 - 2020-02-19
 
         * FIXES https://bugs.torproject.org/30946
