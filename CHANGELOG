@@ -1,3 +1,5 @@
+Changes in version 0.10.0 - 2020-04-01
+
         * FIXES https://bugs.torproject.org/30317
         Update our "howto" box, which explains how one adds bridges to Tor
         Browser.  In addition to updating the instructions, this patch also
