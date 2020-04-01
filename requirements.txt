@@ -3,7 +3,7 @@ beautifulsoup4==4.8.2
 html5lib==1.0b8
 Mako==1.1.1
 pycryptodome==3.9.6
-Twisted==19.10.0
+Twisted==20.3.0
 gnupg==2.3.1
 ipaddr==2.2.0
 Pillow==6.2.2

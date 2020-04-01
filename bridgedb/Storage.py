@@ -166,9 +166,8 @@ class Database(object):
 
     def insertBridgeAndGetRing(self, bridge, setRing, seenAt, validRings,
                                defaultPool="unallocated"):
-        '''Updates info about bridge, setting ring to setRing if none was set.
-           Also sets distributor to `defaultPool' if the bridge was found in
-           the database, but its distributor isn't valid anymore.
+        '''Updates info about bridge, setting ring to setRing.  Also sets
+        distributor to `defaultPool' if setRing isn't a valid ring.
 
            Returns the name of the distributor the bridge is assigned to.
         '''
@@ -178,26 +177,22 @@ class Database(object):
         h = bridge.fingerprint
         assert len(h) == HEX_ID_LEN
 
-        cur.execute("SELECT id, distributor "
-                    "FROM Bridges WHERE hex_key = ?", (h,))
+        # Check if this is currently a valid ring name. If not, move into
+        # default pool.
+        if setRing not in validRings:
+            setRing = defaultPool
+
+        cur.execute("SELECT id FROM Bridges WHERE hex_key = ?", (h,))
         v = cur.fetchone()
         if v is not None:
-            i, ring = v
-            # Check if this is currently a valid ring name. If not, move back
-            # into default pool.
-            if ring not in validRings:
-                ring = defaultPool
+            bridgeId = v[0]
             # Update last_seen, address, port and (possibly) distributor.
             cur.execute("UPDATE Bridges SET address = ?, or_port = ?, "
                         "distributor = ?, last_seen = ? WHERE id = ?",
-                        (str(bridge.address), bridge.orPort, ring,
-                         timeToStr(seenAt), i))
-            return ring
+                        (str(bridge.address), bridge.orPort, setRing,
+                         timeToStr(seenAt), bridgeId))
+            return setRing
         else:
-            # Check if this is currently a valid ring name. If not, move back
-            # into default pool.
-            if setRing not in validRings:
-                setRing = defaultPool
             # Insert it.
             cur.execute("INSERT INTO Bridges (hex_key, address, or_port, "
                         "distributor, first_seen, last_seen) "
