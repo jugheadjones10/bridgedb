@@ -82,7 +82,7 @@ class DatabaseTest(unittest.TestCase):
                                                  time.time(),
                                                  self.validRings)
             self.assertIn(ringname, self.validRings)
-            self.assertEqual(ringname, 'moat')
+            self.assertEqual(ringname, 'https')
 
     def test_getBridgeDistributor_recognised(self):
         bridge = self.fakeBridges[0]

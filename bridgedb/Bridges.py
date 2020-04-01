@@ -180,6 +180,14 @@ class BridgeRing(object):
         for tp, val, count, subring in self.subrings:
             subring.clear()
 
+    def remove(self, bridge):
+        """Remove a **bridge** from this hashring."""
+        for tp, val, _, subring in self.subrings:
+            subring.remove(bridge)
+        pos = self.hmac(bridge.identity)
+        if pos in self.bridges:
+            del self.bridges[pos]
+
     def insert(self, bridge):
         """Add a **bridge** to this hashring.
 
@@ -364,46 +372,6 @@ class BridgeRing(object):
             f.write("%s %s\n" % (b.fingerprint, " ".join(desc).strip()))
 
 
-class FixedBridgeSplitter(object):
-    """Splits bridges up based on an HMAC and assigns them to one of several
-    subhashrings with equal probability.
-    """
-    def __init__(self, key, rings):
-        self.hmac = getHMACFunc(key, hex=True)
-        self.rings = rings[:]
-
-    def insert(self, bridge):
-        # Grab the first 4 bytes
-        digest = self.hmac(bridge.identity)
-        pos = int( digest[:8], 16 )
-        which = pos % len(self.rings)
-        self.rings[which].insert(bridge)
-
-    def clear(self):
-        """Clear all bridges from every ring in ``rings``."""
-        for r in self.rings:
-            r.clear()
-
-    def __len__(self):
-        """Returns the total number of bridges in all ``rings``."""
-        total = 0
-        for ring in self.rings:
-            total += len(ring)
-        return total
-
-    def dumpAssignments(self, filename, description=""):
-        """Write all bridges assigned to this hashring to ``filename``.
-
-        :param string description: If given, include a description next to the
-            index number of the ring from :attr:`FilteredBridgeSplitter.rings`
-            the following bridges were assigned to. For example, if the
-            description is ``"IPv6 obfs2 bridges"`` the line would read:
-            ``"IPv6 obfs2 bridges ring=3"``.
-        """
-        for index, ring in zip(range(len(self.rings)), self.rings):
-            ring.dumpAssignments(filename, "%s ring=%s" % (description, index))
-
-
 class UnallocatedHolder(object):
     """A pseudo-bridgeholder that ignores its bridges and leaves them
        unassigned.
@@ -411,8 +379,17 @@ class UnallocatedHolder(object):
     def __init__(self):
         self.fingerprints = []
 
+    def remove(self, bridge):
+        logging.debug("Removing %s from unallocated" % bridge.fingerprint)
+        i = -1
+        try:
+            i = self.fingerprints.index(bridge.fingerprint)
+        except ValueError:
+            return
+        del self.fingerprints[i]
+
     def insert(self, bridge):
-        logging.debug("Leaving %s unallocated", bridge.fingerprint)
+        logging.debug("Leaving %s unallocated" % bridge.fingerprint)
         if not bridge.fingerprint in self.fingerprints:
             self.fingerprints.append(bridge.fingerprint)
 
@@ -488,43 +465,52 @@ class BridgeSplitter(object):
             return
 
         validRings = self.rings
-        distribution_method = None
+        distribution_method = orig_method = None
 
-        # If the bridge already has a distributor, use that.
         with bridgedb.Storage.getDB() as db:
-            distribution_method = db.getBridgeDistributor(bridge, validRings)
+            orig_method = db.getBridgeDistributor(bridge, validRings)
+            if orig_method is not None:
+                distribution_method = orig_method
+                logging.info("So far, bridge %s was in hashring %s" %
+                             (bridge, orig_method))
 
-        if distribution_method:
-            logging.info("%s bridge %s was already in hashring %s" %
-                         (self.__class__.__name__, bridge, distribution_method))
-        else:
-            # Check if the bridge requested a specific distribution method.
-            if bridge.distribution_request:
-                distribution_method = bridge.distribution_request
-                logging.info("%s bridge %s requested placement in hashring %s"
-                             % (self.__class__.__name__, bridge,
-                                distribution_method))
+        # Check if the bridge requested a distribution method and if so, try to
+        # use it.
+        if bridge.distribution_request:
+            distribution_method = bridge.distribution_request
+            logging.info("Bridge %s requested placement in hashring %s" %
+                         (bridge, distribution_method))
 
-            # If they requested not to be distributed, honor the request:
-            if distribution_method == "none":
-                logging.info("%s bridge %s requested to not be distributed."
-                             % (self.__class__.__name__, bridge))
-                return
+        # Is the bridge requesting a distribution method that's different
+        # from the one we have on record?  If so, we have to delete it from
+        # its previous ring.
+        if orig_method is not None and \
+           orig_method != distribution_method and \
+           distribution_method in (validRings + ["none"]):
+            logging.info("Bridge %s is in %s but wants to be in %s." %
+                            (bridge, orig_method, distribution_method))
+            prevRing = self.ringsByName.get(orig_method)
+            prevRing.remove(bridge)
 
-            # If we didn't know what they are talking about, or they requested
-            # "any" distribution method, and we've never seen this bridge
-            # before, then determine where to place it.
-            if ((distribution_method not in validRings) or
-                (distribution_method == "any")):
+        # If they requested not to be distributed, honor the request:
+        if distribution_method == "none":
+            logging.info("Bridge %s requested to not be distributed." % bridge)
+            return
 
-                pos = self.hmac(bridge.identity)
-                n = int(pos[:8], 16) % self.totalP
-                pos = bisect.bisect_right(self.pValues, n) - 1
-                assert 0 <= pos < len(self.rings)
-                distribution_method = self.rings[pos]
-                logging.info(("%s placing bridge %s into hashring %s (via n=%s,"
-                              " pos=%s).") % (self.__class__.__name__, bridge,
-                                              distribution_method, n, pos))
+        # If we didn't know what they are talking about, or they requested
+        # "any" distribution method, and we've never seen this bridge
+        # before, then deterministically determine where to place it.
+        if ((distribution_method not in validRings) or
+            (distribution_method == "any")):
+
+            pos = self.hmac(bridge.identity)
+            n = int(pos[:8], 16) % self.totalP
+            pos = bisect.bisect_right(self.pValues, n) - 1
+            assert 0 <= pos < len(self.rings)
+            distribution_method = self.rings[pos]
+            logging.info(("%s placing bridge %s into hashring %s (via n=%s,"
+                            " pos=%s).") % (self.__class__.__name__, bridge,
+                                            distribution_method, n, pos))
 
         with bridgedb.Storage.getDB() as db:
             ringname = db.insertBridgeAndGetRing(bridge, distribution_method,
@@ -567,7 +553,8 @@ class FilteredBridgeSplitter(object):
                    I-guess-it-passes-for-some-sort-of-hashring classes in this
                    module.
         :ivar hmac: DOCDOC
-        :ivar bridges: DOCDOC
+        :ivar bridges: A dictionary mapping a bridge's fingerprint to its
+             :class:`~bridgedb.bridges.Bridge` object.
         :type distributorName: str
         :ivar distributorName: The name of this splitter's distributor. See
              :meth:`~bridgedb.distributors.https.distributor.HTTPSDistributor.setDistributorName`.
@@ -575,7 +562,7 @@ class FilteredBridgeSplitter(object):
         self.key = key
         self.filterRings = {}
         self.hmac = getHMACFunc(key, hex=True)
-        self.bridges = []
+        self.bridges = {}
         self.distributorName = ''
 
         #XXX: unused
@@ -585,8 +572,29 @@ class FilteredBridgeSplitter(object):
         return len(self.bridges)
 
     def clear(self):
-        self.bridges = []
+        self.bridges = {}
         self.filterRings = {}
+
+    def remove(self, bridge):
+        """Remove a bridge from all appropriate sub-hashrings.
+
+        :type bridge: :class:`~bridgedb.bridges.Bridge`
+        :param bridge: The bridge to remove.
+        """
+        logging.debug("Removing %s from hashring..." % bridge)
+
+        try:
+            del self.bridges[bridge.fingerprint]
+        except KeyError:
+            logging.warn("Was asked to remove non-existant bridge %s "
+                         "from ring." % bridge)
+            return
+
+        for ringname, (filterFn, subring) in self.filterRings.items():
+            if filterFn(bridge):
+                subring.remove(bridge)
+                logging.debug("Removed bridge %s from %s subhashring." %
+                              (bridge, ringname))
 
     def insert(self, bridge):
         """Insert a bridge into all appropriate sub-hashrings.
@@ -603,15 +611,9 @@ class FilteredBridgeSplitter(object):
                           "bridge: %s") % bridge)
             return
 
-        index = 0
         logging.debug("Inserting %s into hashring..." % bridge)
-        for old_bridge in self.bridges[:]:
-            if bridge.fingerprint == old_bridge.fingerprint:
-                self.bridges[index] = bridge
-                break
-            index += 1
-        else:
-            self.bridges.append(bridge)
+        self.bridges[bridge.fingerprint] = bridge
+
         for ringname, (filterFn, subring) in self.filterRings.items():
             if filterFn(bridge):
                 subring.insert(bridge)
@@ -695,7 +697,7 @@ class FilteredBridgeSplitter(object):
 
         if populate_from:
             inserted = 0
-            for bridge in populate_from:
+            for bridge in populate_from.values():
                 if isinstance(bridge, Bridge) and filterFn(bridge):
                     subring.insert(bridge)
                     inserted += 1
@@ -709,7 +711,7 @@ class FilteredBridgeSplitter(object):
         # bridges may be present in multiple filter sets
         # only one line should be dumped per bridge
 
-        for b in self.bridges:
+        for b in self.bridges.values():
             # gather all the filter descriptions
             desc = []
             for n,(g,r) in self.filterRings.items():
