@@ -126,6 +126,47 @@ BRIDGES = {
     1: _("Get Bridges!"),
 }
 
+BRIDGEDB_INFO = {
+    0: _("Bridge distribution mechanisms"),
+    # TRANSLATORS: Please DO NOT translate "BridgeDB", "HTTPS", and "Moat".
+    1: _("""\
+BridgeDB implements four mechanisms to distribute bridges: "HTTPS", "Moat",
+"Email", and "Reserved".  Bridges that are not distributed over BridgeDB use
+the pseudo-mechanism "None".  The following list briefly explains how these
+mechanisms work and our %sBridgeDB metrics%s visualize how popular each of the
+mechanisms is."""),
+    2: _("""\
+The "HTTPS" distribution mechanism hands out bridges over this website.  To get
+bridges, go to %sbridges.torproject.org%s, select your preferred options, and
+solve the subsequent CAPTCHA."""),
+    3: _("""\
+The "Moat" distribution mechanism is part of Tor Browser, allowing users to
+request bridges from inside their Tor Browser settings.  To get bridges, go to
+your Tor Browser's %sTor settings%s, click on "request a new bridge", solve the
+subsequent CAPTCHA, and Tor Browser will automatically add your new
+bridges."""),
+    4: _("""\
+Users can request bridges from the "Email" distribution mechanism by sending an
+email to %sbridges@torproject.org%s and writing "get transport obfs4" in the
+email body."""),
+    5: _("Reserved"),
+    6: _("""\
+BridgeDB maintains a small number of bridges that are not distributed
+automatically.  Instead, we reserve these bridges for manual distribution and
+hand them out to NGOs and other organizations and individuals that need
+bridges.  Bridges that are distributed over the "Reserved" mechanism may not
+see users for a long time.  Note that the "Reserved" distribution mechanism is
+called "Unallocated" in %sbridge pool assignment%s files."""),
+    7: _("None"),
+    8: _("""\
+Bridges whose distribution mechanism is "None" are not distributed by BridgeDB.
+It is the bridge operator's responsibility to distribute their bridges to
+users.  Note that on Relay Search, a freshly set up bridge's distribution
+mechanism says "None" for up to approximately one day.  Be a bit patient, and
+it will then change to the bridge's actual distribution mechanism.
+"""),
+}
+
 OPTIONS = {
     0: _("Please select options for bridge type:"),
     1: _("Do you need IPv6 addresses?"),
@@ -141,23 +182,10 @@ HOWTO_TBB = {
     0: _("""How to start using your bridges"""),
     # TRANSLATORS: Please DO NOT translate "Tor Browser".
     1: _("""\
-To enter bridges into Tor Browser, first go to the %s Tor Browser download
-page %s and then follow the instructions there for downloading and starting
-Tor Browser."""),
-    # TRANSLATORS: Please DO NOT translate "Tor".
-    2: _("""\
-When the 'Tor Network Settings' dialogue pops up, click 'Configure' and follow
-the wizard until it asks:"""),
-    # TRANSLATORS: Please DO NOT translate "Tor".
-    3: _("""\
-Does your Internet Service Provider (ISP) block or otherwise censor connections
-to the Tor network?"""),
-    # TRANSLATORS: Please DO NOT translate "Tor".
-    4: _("""\
-Select 'Yes' and then click 'Next'. To configure your new bridges, copy and
-paste the bridge lines into the text input box. Finally, click 'Connect', and
-you should be good to go! If you experience trouble, try clicking the 'Help'
-button in the 'Tor Network Settings' wizard for further assistance."""),
+ First, you need to %sdownload Tor Browser%s. Our Tor Browser User
+ Manual explains how you can add your bridges to Tor Browser. If you are
+ using Windows, Linux, or OS X, %sclick here%s to learn more. If you
+ are using Android, %sclick here%s."""),
 }
 
 EMAIL_COMMANDS = {
@@ -266,7 +294,7 @@ EMAIL_SPRINTF = {
     # Goes into the "%s without Pluggable Transport %s" part of ``WELCOME[2]``
     "WELCOME2": ("-", "-"),
     # For the "%s Tor Browser download page %s" part of ``HOWTO_TBB[1]``
-    "HOWTO_TBB1": ("", "[0]"),
+    "HOWTO_TBB1": ("", "[0]", "", "[1]", "", "[2]"),
     # For the "you should email %s" in ``HELP[0]``
     "HELP0": ("frontdesk@torproject.org"),
 }
@@ -303,7 +331,9 @@ BridgeDB can provide bridges with several types of Pluggable Transports[0],
 
 EMAIL_REFERENCE_LINKS = {
     "WELCOME0": "[0]: https://www.torproject.org/docs/pluggable-transports.html",
-    "HOWTO_TBB1": "[0]: https://www.torproject.org/projects/torbrowser.html",
+    "HOWTO_TBB1": "[0]: https://www.torproject.org/download/",
+    "HOWTO_TBB2": "[1]: https://tb-manual.torproject.org/bridges/#entering-bridge-addresses",
+    "HOWTO_TBB3": "[2]: https://tb-manual.torproject.org/mobile-tor/#circumvention",
 }
 
 BRIDGEDB_OPENPGP_KEY = """\
